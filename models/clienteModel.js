@@ -140,26 +140,57 @@ class Client {
   }
 
   static async deactivate(id) {
-    // Desactivar todas las cuentas del cliente
+    // Obtener todas las cuentas del cliente
     const accounts = await this.getClientAccounts(id);
     
     if (accounts.length === 0) {
       throw new Error('El cliente no tiene cuentas asociadas');
     }
 
-    // Marcar todas las cuentas como INACTIVAS
+    // Obtener lista de números de cuenta para eliminar transferencias relacionadas
+    const accountNumbers = accounts.map(acc => acc.numero_cuenta);
+
+    // Eliminar transferencias que usan estas cuentas (origen o destino)
+    // La auditoría se preservará porque tiene FK a transferencia, no será eliminada
+    if (accountNumbers.length > 0) {
+      for (const accountNumber of accountNumbers) {
+        await pool.query(
+          `DELETE FROM transferencias 
+           WHERE cuenta_origen = ? OR cuenta_destino = ?`,
+          [accountNumber, accountNumber]
+        );
+      }
+    }
+
+    // Eliminar todas las transacciones de las cuentas del cliente
+    for (const account of accounts) {
+      await pool.query(
+        'DELETE FROM transacciones WHERE id_cuenta = ?',
+        [account.id_cuenta]
+      );
+    }
+
+    // Eliminar todos los movimientos de las cuentas del cliente
+    for (const account of accounts) {
+      await pool.query(
+        'DELETE FROM movimientos WHERE id_cuenta = ?',
+        [account.id_cuenta]
+      );
+    }
+
+    // Eliminar todas las cuentas del cliente
     await pool.query(
-      'UPDATE cuentas SET estado = "INACTIVA" WHERE id_cliente = ? AND estado != "INACTIVA"',
+      'DELETE FROM cuentas WHERE id_cliente = ?',
       [id]
     );
 
-    // Marcar el cliente como INACTIVO
+    // Eliminar el cliente
     await pool.query(
-      'UPDATE clientes SET estado = "INACTIVO" WHERE id_cliente = ?',
+      'DELETE FROM clientes WHERE id_cliente = ?',
       [id]
     );
 
-    return this.findById(id);
+    return { success: true, message: 'Cliente y sus cuentas eliminados completamente' };
   }
 }
 
