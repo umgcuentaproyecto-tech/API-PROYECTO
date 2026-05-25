@@ -1,5 +1,6 @@
 const Transaction = require('../models/transaccionModel');
 const Movement = require('../models/movimientoModel');
+const AuditService = require('../utils/auditService');
 
 // Crear una nueva transacción (depósito o retiro)
 const createTransaction = async (req, res) => {
@@ -85,6 +86,14 @@ const createTransaction = async (req, res) => {
             descripcion: `${tipo} registrado exitosamente`,
             estado: 'COMPLETADO'
         });
+
+        // Auditoría
+        await AuditService.transaccion(tipo, id_cuenta, monto, {
+            numero_cuenta: accountInfo.numero_cuenta,
+            cliente: accountInfo.nombre_cliente,
+            saldo_anterior: accountInfo.saldo,
+            saldo_nuevo: newBalance
+        }, req.user);
 
         return res.status(201).json({ 
             success: true, 

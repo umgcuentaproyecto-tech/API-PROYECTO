@@ -1,4 +1,5 @@
 const Client = require('../models/clienteModel');
+const AuditService = require('../utils/auditService');
 
 exports.getAllClients = async (req, res) => {
   try {
@@ -73,6 +74,13 @@ exports.createClient = async (req, res) => {
       estado: 'ACTIVO'
     });
 
+    // Auditoría
+    await AuditService.crear('clientes', client.id_cliente, {
+      nombres: client.nombres,
+      apellidos: client.apellidos,
+      dpi: client.dpi
+    }, req.user);
+
     res.status(201).json({
       success: true,
       message: 'Cliente creado exitosamente',
@@ -120,6 +128,13 @@ exports.updateClient = async (req, res) => {
       direccion: direccion?.trim() || null,
       estado: estado || existingClient.estado
     });
+
+    // Auditoría
+    await AuditService.actualizar('clientes', id, {
+      nombres: updatedClient.nombres,
+      email: updatedClient.email,
+      estado: updatedClient.estado
+    }, req.user);
 
     res.json({
       success: true,
@@ -176,6 +191,13 @@ exports.deleteClient = async (req, res) => {
     }
 
     const result = await Client.deactivate(id);
+
+    // Auditoría
+    await AuditService.eliminar('clientes', id, {
+      nombres: client.nombres,
+      apellidos: client.apellidos,
+      dpi: client.dpi
+    }, req.user);
 
     res.json({
       success: true,

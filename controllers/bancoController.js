@@ -1,4 +1,5 @@
 const Bank = require('../models/bancoModel');
+const AuditService = require('../utils/auditService');
 
 exports.getAllBanks = async (req, res) => {
   try {
@@ -59,6 +60,12 @@ exports.createBank = async (req, res) => {
       activo: activo !== false
     });
 
+    // Auditoría
+    await AuditService.crear('bancos', bank.id_banco, {
+      nombre: bank.nombre,
+      codigo_swift: bank.codigo_swift
+    }, req.user);
+
     res.status(201).json({
       success: true,
       message: 'Banco creado exitosamente',
@@ -85,6 +92,13 @@ exports.updateBank = async (req, res) => {
 
     const bank = await Bank.update(bankId, updateData);
 
+    // Auditoría
+    await AuditService.actualizar('bancos', bankId, {
+      nombre: bank.nombre,
+      codigo_swift: bank.codigo_swift,
+      activo: bank.activo
+    }, req.user);
+
     res.json({
       success: true,
       message: 'Banco actualizado exitosamente',
@@ -102,7 +116,14 @@ exports.updateBank = async (req, res) => {
 exports.deleteBank = async (req, res) => {
   try {
     const bankId = req.params.id;
+    const bank = await Bank.findById(bankId);
     await Bank.delete(bankId);
+
+    // Auditoría
+    await AuditService.eliminar('bancos', bankId, {
+      nombre: bank.nombre,
+      codigo_swift: bank.codigo_swift
+    }, req.user);
 
     res.json({
       success: true,

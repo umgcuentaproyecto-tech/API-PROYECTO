@@ -122,7 +122,7 @@ class Transfer {
           [monto, data.cuenta_origen]
         );
 
-        await this.writeAudit(connection, {
+        await this.registroAuditoria({
           idTransferencia: result.insertId,
           user,
           evento: 'TRANSFERENCIA_INTERBANCARIA_PENDIENTE',
@@ -221,7 +221,7 @@ class Transfer {
       [data.idTransferencia]
     );
 
-    await this.writeAudit(connection, {
+    await this.registroAuditoria({
       idTransferencia: data.idTransferencia,
       user: data.user,
       evento: 'TRANSFERENCIA_INTERNA_APROBADA',
@@ -358,7 +358,7 @@ class Transfer {
         ]
       );
 
-      await this.writeAudit(connection, {
+      await this.registroAuditoria({
         idTransferencia: result.insertId,
         evento: 'TRANSFERENCIA_INTERBANCARIA_RECIBIDA_APROBADA',
         detalle: {
@@ -501,7 +501,7 @@ class Transfer {
         [estado, motivoRechazo, idTransferencia]
       );
 
-      await this.writeAudit(connection, {
+      await this.registroAuditoria({
         idTransferencia,
         evento: `TRANSFERENCIA_INTERBANCARIA_${estado}`,
         detalle: {
@@ -601,7 +601,7 @@ class Transfer {
           [transactionId]
         );
 
-        await this.writeAudit(connection, {
+        await this.registroAuditoria({
           idTransferencia: transfer.id_transferencia,
           user,
           evento: 'TRANSFERENCIA_INTERBANCARIA_APROBADA',
@@ -732,7 +732,7 @@ class Transfer {
           );
         }
 
-        await this.writeAudit(connection, {
+        await this.registroAuditoria({
           idTransferencia: transfer.id_transferencia,
           evento: `TRANSFERENCIA_INTERBANCARIA_NOTIFICACION_${estado}`,
           detalle: {
@@ -1003,8 +1003,24 @@ class Transfer {
     }
   }
 
-  // Auditoría manejada por servicio externo (WS)
-  static async writeAudit(connection, data) {
+  
+  static async registroAuditoria(data) {
+    const WS_AUDITORIA_URL = process.env.WS_AUDITORIA_URL || 'http://localhost:3001/api/auditoria';
+    
+
+    fetch(WS_AUDITORIA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idTransferencia: data.idTransferencia || null,
+        idUsuario: data.user?.id_usuario || null,
+        evento: data.evento,
+        detalle: data.detalle || {},
+        ipOrigen: data.ipOrigen || null,
+        userAgent: data.userAgent || null,
+        timestamp: new Date()
+      })
+    }).catch(err => console.error('Error registrando auditoría:', err));
   }
 }
 

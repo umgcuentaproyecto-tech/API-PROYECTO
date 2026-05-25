@@ -1,5 +1,6 @@
 const Account = require('../models/cuentaModel');
 const Client = require('../models/clienteModel');
+const AuditService = require('../utils/auditService');
 
 exports.getAllAccounts = async (req, res) => {
   try {
@@ -70,6 +71,15 @@ exports.createAccount = async (req, res) => {
       saldo: 0.00
     });
 
+    // Auditoría
+    await AuditService.crear('cuentas', account.id_cuenta, {
+      numero_cuenta: account.numero_cuenta,
+      id_cliente: account.id_cliente,
+      tipo_cuenta: account.tipo_cuenta,
+      moneda: account.moneda,
+      swift_banco: account.swift_banco
+    }, req.user);
+
     res.status(201).json({
       success: true,
       message: 'Cuenta aperturada exitosamente',
@@ -100,6 +110,13 @@ exports.updateAccount = async (req, res) => {
       tipo_cuenta: tipo_cuenta || existingAccount.tipo_cuenta,
       estado: estado || existingAccount.estado
     });
+
+    // Auditoría
+    await AuditService.actualizar('cuentas', id, {
+      numero_cuenta: updatedAccount.numero_cuenta,
+      estado: updatedAccount.estado,
+      tipo_cuenta: updatedAccount.tipo_cuenta
+    }, req.user);
 
     res.json({
       success: true,

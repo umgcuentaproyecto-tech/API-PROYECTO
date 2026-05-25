@@ -1,4 +1,5 @@
 const User = require('../models/usuarioModel');
+const AuditService = require('../utils/auditService');
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -54,6 +55,13 @@ exports.createUser = async (req, res) => {
 
     const user = await User.create({ nombre, email, password_hash, rol, activo });
 
+    // Auditoría
+    await AuditService.crear('usuarios', user.id_usuario, {
+      nombre: user.nombre,
+      email: user.email,
+      rol: user.rol
+    }, req.user);
+
     res.status(201).json({
       success: true,
       message: 'Usuario creado exitosamente',
@@ -79,6 +87,13 @@ exports.updateUser = async (req, res) => {
       });
     }
 
+    // Auditoría
+    await AuditService.actualizar('usuarios', req.params.id, {
+      nombre: user.nombre,
+      email: user.email,
+      rol: user.rol
+    }, req.user);
+
     res.json({
       success: true,
       message: 'Usuario actualizado exitosamente',
@@ -103,6 +118,12 @@ exports.deleteUser = async (req, res) => {
         message: 'Usuario no encontrado'
       });
     }
+
+    // Auditoría
+    await AuditService.eliminar('usuarios', req.params.id, {
+      nombre: user.nombre,
+      email: user.email
+    }, req.user);
 
     res.json({
       success: true,
