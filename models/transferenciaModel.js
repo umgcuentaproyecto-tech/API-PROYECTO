@@ -470,7 +470,7 @@ class Transfer {
         swiftDestino: transfer.swift_destino,
         NombreOrigen: nombreCliente,
         monto: transfer.monto,
-        descripcion: transfer.descripcion
+        descripcion: transfer.descripcion || 'Sin descripción'
       };
 
       console.log(`Enviando transferencia ${transfer.transaction_id} a ${bank.nombre}...`);

@@ -191,3 +191,12 @@ INSERT INTO transferencias (
   'PENDIENTE',
   'Transferencia interbancaria de prueba'
 );
+
+-- Script para agregar nuevas columnas a transferencias (para compatibilidad con versiones antiguas de MySQL)
+ALTER TABLE transferencias ADD COLUMN id_cuenta_origen INT NULL;
+ALTER TABLE transferencias ADD COLUMN id_cuenta_destino INT NULL;
+ALTER TABLE transferencias ADD COLUMN cuenta_origen_externa VARCHAR(30) NULL;
+ALTER TABLE transferencias ADD COLUMN nombre_cuenta_origen_externa VARCHAR(120) NULL;
+ALTER TABLE transferencias ADD COLUMN cuenta_destino_externa VARCHAR(30) NULL;
+ALTER TABLE transferencias ADD COLUMN tipo_transferencia VARCHAR(50) NULL;
+ALTER TABLE transferencias ADD COLUMN direccion VARCHAR(255) NULL;
