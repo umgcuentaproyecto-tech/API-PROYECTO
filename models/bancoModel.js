@@ -3,7 +3,7 @@ const pool = require('../config/database');
 class Bank {
   static async findAll() {
     const [rows] = await pool.query(
-      `SELECT id_banco, nombre, codigo_swift, url_api, activo, created_at, updated_at
+      `SELECT id_banco, nombre, codigo_swift, url_api, endpoint_transferencia, activo, created_at, updated_at
        FROM bancos
        ORDER BY created_at DESC`
     );
@@ -12,7 +12,7 @@ class Bank {
 
   static async findById(id) {
     const [rows] = await pool.query(
-      `SELECT id_banco, nombre, codigo_swift, url_api, activo, created_at, updated_at
+      `SELECT id_banco, nombre, codigo_swift, url_api, endpoint_transferencia, activo, created_at, updated_at
        FROM bancos
        WHERE id_banco = ?`,
       [id]
@@ -22,7 +22,7 @@ class Bank {
 
   static async findBySwift(codigo_swift) {
     const [rows] = await pool.query(
-      `SELECT id_banco, nombre, codigo_swift, url_api, activo, created_at, updated_at
+      `SELECT id_banco, nombre, codigo_swift, url_api, endpoint_transferencia, activo, created_at, updated_at
        FROM bancos
        WHERE codigo_swift = ?`,
       [codigo_swift]
@@ -37,9 +37,15 @@ class Bank {
 
     try {
       const [result] = await pool.query(
-        `INSERT INTO bancos (nombre, codigo_swift, url_api, activo)
-         VALUES (?, ?, ?, ?)`,
-        [data.nombre, data.codigo_swift, data.url_api, data.activo ?? true]
+        `INSERT INTO bancos (nombre, codigo_swift, url_api, endpoint_transferencia, activo)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          data.nombre,
+          data.codigo_swift,
+          data.url_api,
+          data.endpoint_transferencia || '/api/transferencias/interbancaria/entrante',
+          data.activo ?? true
+        ]
       );
 
       return this.findById(result.insertId);
@@ -57,8 +63,6 @@ class Bank {
       throw new Error('Banco no encontrado');
     }
 
-
-
     const fields = [];
     const values = [];
 
@@ -73,6 +77,10 @@ class Bank {
     if (data.url_api !== undefined) {
       fields.push('url_api = ?');
       values.push(data.url_api);
+    }
+    if (data.endpoint_transferencia !== undefined) {
+      fields.push('endpoint_transferencia = ?');
+      values.push(data.endpoint_transferencia);
     }
     if (data.activo !== undefined) {
       fields.push('activo = ?');

@@ -23,6 +23,7 @@ CREATE TABLE bancos (
   nombre VARCHAR(120) NOT NULL,
   codigo_swift VARCHAR(50) NOT NULL UNIQUE,
   url_api VARCHAR(255) NOT NULL,
+  endpoint_transferencia VARCHAR(100) DEFAULT '/api/transferencias/interbancaria/entrante',
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
@@ -150,9 +151,10 @@ CREATE TABLE movimientos (
 );
 
 
-INSERT INTO bancos (nombre, codigo_swift, url_api) VALUES
-('Banco Los Canchitos', 'GTBC6968', 'http://localhost:8081'),
-('NOVABANK', 'GTB666', 'https://apibanca.onrender.com');
+INSERT INTO bancos (nombre, codigo_swift, url_api, endpoint_transferencia) VALUES
+('Banco Los Canchitos', 'GTBC6968', 'http://localhost:8081', '/api/transferencias/interbancaria/entrante'),
+('NOVABANK', 'GTB666', 'https://apibanca.onrender.com', '/api/transferencias/interbancaria/entrante'),
+('Otro Banco', 'GTTBXXXX', 'https://otro-banco.com', '/api/transferencia/validar');
 
 -- Datos de prueba para desarrollo local.
 INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES

@@ -138,6 +138,47 @@ exports.deleteBank = async (req, res) => {
   }
 };
 
+exports.updateEndpoint = async (req, res) => {
+  try {
+    const { swift } = req.params;
+    const { endpoint_transferencia } = req.body;
+
+    if (!endpoint_transferencia) {
+      return res.status(400).json({
+        success: false,
+        message: 'Endpoint es requerido'
+      });
+    }
+
+    const bank = await Bank.findBySwift(swift);
+    if (!bank) {
+      return res.status(404).json({
+        success: false,
+        message: 'Banco no encontrado'
+      });
+    }
+
+    const updatedBank = await Bank.update(bank.id_banco, { endpoint_transferencia });
+
+    // Auditoría
+    await AuditService.actualizar('bancos', bank.id_banco, {
+      endpoint_transferencia: updatedBank.endpoint_transferencia
+    }, req.user);
+
+    res.json({
+      success: true,
+      message: 'Endpoint actualizado exitosamente',
+      data: updatedBank
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar endpoint',
+      error: error.message
+    });
+  }
+};
+
 exports.toggleBankStatus = async (req, res) => {
   try {
     const { activo } = req.body;

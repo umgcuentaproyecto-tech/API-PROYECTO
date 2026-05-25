@@ -10,6 +10,7 @@ router.get('/:id', bankController.getBankById);
 // Solo ADMIN
 router.post('/', requireAuth, requireRole('ADMIN'), bankController.createBank);
 router.put('/:id', requireAuth, requireRole('ADMIN'), bankController.updateBank);
+router.patch('/:swift/endpoint', requireAuth, requireRole('ADMIN'), bankController.updateEndpoint);
 router.delete('/:id', requireAuth, requireRole('ADMIN'), bankController.deleteBank);
 router.patch('/:id/toggle-status', requireAuth, requireRole('ADMIN'), bankController.toggleBankStatus);
 
