@@ -1003,19 +1003,8 @@ class Transfer {
     }
   }
 
+  // Auditoría manejada por servicio externo (WS)
   static async writeAudit(connection, data) {
-    await connection.query(
-      `INSERT INTO auditoria_transacciones (id_transferencia, id_usuario, evento, detalle, ip_origen, user_agent)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        data.idTransferencia || null,
-        data.user?.id_usuario || null,
-        data.evento,
-        JSON.stringify(data.detalle || {}),
-        data.ipOrigen || null,
-        data.nombreUsuario || null
-      ]
-    );
   }
 }
 

@@ -151,7 +151,6 @@ class Client {
     const accountNumbers = accounts.map(acc => acc.numero_cuenta);
 
     // Eliminar transferencias que usan estas cuentas (origen o destino)
-    // La auditoría se preservará porque tiene FK a transferencia, no será eliminada
     if (accountNumbers.length > 0) {
       for (const accountNumber of accountNumbers) {
         await pool.query(

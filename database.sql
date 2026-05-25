@@ -7,7 +7,6 @@ USE bancoloscanchitos;
 
 
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS auditoria_transacciones;
 DROP TABLE IF EXISTS movimientos;
 DROP TABLE IF EXISTS transacciones;
 DROP TABLE IF EXISTS transferencias;
@@ -101,24 +100,6 @@ CREATE TABLE transferencias (
   INDEX idx_transferencias_cuenta_origen (cuenta_origen),
   INDEX idx_transferencias_cuenta_destino (cuenta_destino),
   INDEX idx_transferencias_swift_destino (swift_destino)
-);
-
-
-CREATE TABLE auditoria_transacciones (
-  id_auditoria BIGINT PRIMARY KEY AUTO_INCREMENT,
-  id_transferencia BIGINT NULL,
-  id_usuario INT NULL,
-  evento VARCHAR(80) NOT NULL,
-  detalle JSON NULL,
-  ip_origen VARCHAR(45) NULL,
-  user_agent VARCHAR(255) NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_auditoria_transferencia
-    FOREIGN KEY (id_transferencia) REFERENCES transferencias(id_transferencia),
-  CONSTRAINT fk_auditoria_usuario
-    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
-  INDEX idx_auditoria_evento (evento),
-  INDEX idx_auditoria_created_at (created_at)
 );
 
 
