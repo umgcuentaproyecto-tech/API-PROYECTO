@@ -29,7 +29,7 @@ exports.createTransfer = async (req, res) => {
       nombreUsuario
     };
     
-    // Detectar si es una transferencia recibida (interbancaria entrante) o nueva
+//trasferencia externa entrante
     const esTransferenciaEntrante = transferData.swiftOrigen && 
                                      transferData.swiftOrigen !== LOCAL_SWIFT &&
                                      !req.user; // Sin autenticación

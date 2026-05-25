@@ -138,6 +138,29 @@ class Client {
     await pool.query('DELETE FROM clientes WHERE id_cliente = ?', [id]);
     return true;
   }
+
+  static async deactivate(id) {
+    // Desactivar todas las cuentas del cliente
+    const accounts = await this.getClientAccounts(id);
+    
+    if (accounts.length === 0) {
+      throw new Error('El cliente no tiene cuentas asociadas');
+    }
+
+    // Marcar todas las cuentas como INACTIVAS
+    await pool.query(
+      'UPDATE cuentas SET estado = "INACTIVA" WHERE id_cliente = ? AND estado != "INACTIVA"',
+      [id]
+    );
+
+    // Marcar el cliente como INACTIVO
+    await pool.query(
+      'UPDATE clientes SET estado = "INACTIVO" WHERE id_cliente = ?',
+      [id]
+    );
+
+    return this.findById(id);
+  }
 }
 
 module.exports = Client;

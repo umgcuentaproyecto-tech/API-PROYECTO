@@ -175,16 +175,17 @@ exports.deleteClient = async (req, res) => {
       });
     }
 
-    await Client.delete(id);
+    const deactivatedClient = await Client.deactivate(id);
 
     res.json({
       success: true,
-      message: 'Cliente eliminado exitosamente'
+      message: 'Cliente y todas sus cuentas desactivados exitosamente',
+      data: deactivatedClient
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error.message || 'Error al eliminar cliente'
+      message: error.message || 'Error al desactivar cliente'
     });
   }
 };
