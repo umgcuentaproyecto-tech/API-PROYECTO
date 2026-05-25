@@ -89,6 +89,13 @@ CREATE TABLE transferencias (
   motivo_rechazo VARCHAR(255) NULL,
   fecha_solicitud TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_respuesta TIMESTAMP NULL,
+  id_cuenta_origen INT NULL,
+  id_cuenta_destino INT NULL,
+  cuenta_origen_externa VARCHAR(30) NULL,
+  nombre_cuenta_origen_externa VARCHAR(120) NULL,
+  cuenta_destino_externa VARCHAR(30) NULL,
+  tipo_transferencia VARCHAR(50) NULL,
+  direccion VARCHAR(255) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_transferencias_swift_origen

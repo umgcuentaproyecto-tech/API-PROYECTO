@@ -27,6 +27,13 @@ class Transfer {
          t.motivo_rechazo,
          t.fecha_solicitud,
          t.fecha_respuesta,
+         t.id_cuenta_origen,
+         t.id_cuenta_destino,
+         t.cuenta_origen_externa,
+         t.nombre_cuenta_origen_externa,
+         t.cuenta_destino_externa,
+         t.tipo_transferencia,
+         t.direccion,
          bo.nombre AS banco_origen,
          bd.nombre AS banco_destino
        FROM transferencias t
@@ -45,6 +52,15 @@ class Transfer {
     const cuentaOrigen = data.cuenta_origen || data.cuentaOrigen;
     const cuentaDestino = data.cuenta_destino || data.cuentaDestino;
     const transactionId = createTransactionId(swiftOrigen);
+
+    // Campos adicionales
+    const cuentaOrigenId = data.cuentaOrigenId || data.id_cuenta_origen || null;
+    const cuentaDestinoId = data.cuentaDestinoId || data.id_cuenta_destino || null;
+    const cuentaOrigenExterna = data.cuentaOrigenExterna || data.cuenta_origen_externa || null;
+    const nombreCuentaOrigenExterna = data.nombreCuentaOrigenExterna || data.nombre_cuenta_origen_externa || null;
+    const cuentaDestinoExterna = data.cuentaDestinoExterna || data.cuenta_destino_externa || null;
+    const tipoTransferencia = data.tipo || data.tipo_transferencia || null;
+    const direccion = data.direccion || null;
 
     if (!cuentaOrigen || !cuentaDestino || !monto || monto <= 0) {
       throw new Error('Cuenta origen, cuenta destino y monto positivo son requeridos');
@@ -84,8 +100,10 @@ class Transfer {
       const [result] = await connection.query(
         `INSERT INTO transferencias (
            transaction_id, cuenta_origen, cuenta_destino, swift_origen,
-           swift_destino, monto, moneda, estado, descripcion
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', ?)`,
+           swift_destino, monto, moneda, estado, descripcion, fecha_respuesta,
+           id_cuenta_origen, id_cuenta_destino, cuenta_origen_externa,
+           nombre_cuenta_origen_externa, cuenta_destino_externa, tipo_transferencia, direccion
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'APROBADA', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)`,
         [
           transactionId,
           cuentaOrigen,
@@ -94,7 +112,14 @@ class Transfer {
           swiftDestino,
           monto,
           data.moneda || originAccount.moneda || 'GTQ',
-          data.descripcion || null
+          data.descripcion || null,
+          cuentaOrigenId,
+          cuentaDestinoId,
+          cuentaOrigenExterna,
+          nombreCuentaOrigenExterna,
+          cuentaDestinoExterna,
+          tipoTransferencia,
+          direccion
         ]
       );
 
@@ -344,8 +369,10 @@ class Transfer {
       const [result] = await connection.query(
         `INSERT INTO transferencias (
            transaction_id, cuenta_origen, cuenta_destino, swift_origen,
-           swift_destino, monto, moneda, estado, descripcion, fecha_respuesta
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'APROBADA', ?, CURRENT_TIMESTAMP)`,
+           swift_destino, monto, moneda, estado, descripcion, fecha_respuesta,
+           id_cuenta_origen, id_cuenta_destino, cuenta_origen_externa,
+           nombre_cuenta_origen_externa, cuenta_destino_externa, tipo_transferencia, direccion
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'APROBADA', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)`,
         [
           transactionId,
           cuentaOrigen,
@@ -354,7 +381,14 @@ class Transfer {
           LOCAL_SWIFT,
           monto,
           data.moneda || destinationAccount.moneda || 'GTQ',
-          descripcion || `Transferencia interbancaria recibida de ${nombreOrigen}`
+          descripcion || `Transferencia interbancaria recibida de ${nombreOrigen}`,
+          data.id_cuenta_origen || data.cuentaOrigenId || null,
+          destinationAccount.id_cuenta,
+          data.cuentaOrigenExterna || data.cuenta_origen_externa || null,
+          data.nombreCuentaOrigenExterna || data.nombre_cuenta_origen_externa || nombreOrigen || null,
+          data.cuentaDestinoExterna || data.cuenta_destino_externa || null,
+          data.tipo || data.tipo_transferencia || null,
+          data.direccion || null
         ]
       );
 
@@ -778,6 +812,13 @@ class Transfer {
          t.motivo_rechazo,
          t.fecha_solicitud,
          t.fecha_respuesta,
+         t.id_cuenta_origen,
+         t.id_cuenta_destino,
+         t.cuenta_origen_externa,
+         t.nombre_cuenta_origen_externa,
+         t.cuenta_destino_externa,
+         t.tipo_transferencia,
+         t.direccion,
          bo.nombre AS banco_origen,
          bd.nombre AS banco_destino
        FROM transferencias t
