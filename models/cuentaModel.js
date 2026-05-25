@@ -201,16 +201,42 @@ class Account {
   }
 
   static async delete(id) {
-    const [result] = await pool.query(
-      'DELETE FROM cuentas WHERE id_cuenta = ?',
-      [id]
-    );
+    const connection = await pool.getConnection();
 
-    if (result.affectedRows === 0) {
-      throw new Error('La cuenta no existe o ya fue eliminada');
+    try {
+      await connection.beginTransaction();
+
+      const account = await this.findById(id);
+      if (!account) {
+        throw new Error('La cuenta no existe');
+      }
+
+      // Eliminar transacciones de la cuenta
+      await connection.query(
+        'DELETE FROM transacciones WHERE id_cuenta = ?',
+        [id]
+      );
+
+      // Eliminar movimientos de la cuenta
+      await connection.query(
+        'DELETE FROM movimientos WHERE id_cuenta = ?',
+        [id]
+      );
+
+      // Eliminar la cuenta
+      await connection.query(
+        'DELETE FROM cuentas WHERE id_cuenta = ?',
+        [id]
+      );
+
+      await connection.commit();
+      return { success: true, message: 'Cuenta eliminada completamente' };
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
     }
-
-    return { success: true };
   }
 }
 

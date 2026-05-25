@@ -230,9 +230,17 @@ exports.deleteAccount = async (req, res) => {
     // Eliminar la cuenta
     await Account.delete(id);
 
+    // Auditoría
+    await AuditService.eliminar('cuentas', id, {
+      numero_cuenta: account.numero_cuenta,
+      cliente: account.nombre_cliente,
+      saldo: account.saldo,
+      estado: account.estado
+    }, req.user);
+
     res.json({
       success: true,
-      message: 'Cuenta eliminada exitosamente'
+      message: 'Cuenta eliminada completamente'
     });
   } catch (error) {
     res.status(400).json({
