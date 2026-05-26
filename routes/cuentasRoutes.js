@@ -3,8 +3,10 @@ const router = express.Router();
 const accountController = require('../controllers/cuentaController');
 const { requireAuth, requireRole } = require('../middleware/middlewareAutenticacion');
 
+// GET público - devuelve todas las cuentas (sin autenticación)
+router.get('/', accountController.getAllAccounts);
+
 // Protegidas: ADMIN, OPERADOR
-router.get('/', requireAuth, requireRole('ADMIN', 'OPERADOR'), accountController.getAllAccounts);
 router.get('/:id', requireAuth, requireRole('ADMIN', 'OPERADOR'), accountController.getAccountById);
 router.get('/numero/:accountNumber', requireAuth, requireRole('ADMIN', 'OPERADOR'), accountController.getAccountBalance);
 
