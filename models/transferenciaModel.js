@@ -348,16 +348,19 @@ class Transfer {
         };
       }
 
-      await connection.query(
-        `INSERT INTO bancos (nombre, codigo_swift, url_api)
-         VALUES (?, ?, ?)
-         ON DUPLICATE KEY UPDATE codigo_swift = codigo_swift`,
-        [
-          'Banco externo',
-          swiftOrigen,
-          data.urlApiOrigen || 'http://localhost'
-        ]
+      // Validar que el banco origen exista en la BD
+      const [bankOriginRows] = await connection.query(
+        'SELECT * FROM bancos WHERE codigo_swift = ? AND activo = TRUE',
+        [swiftOrigen]
       );
+
+      if (!bankOriginRows || bankOriginRows.length === 0) {
+        await connection.commit();
+        return {
+          status: 'RECHAZADO',
+          reason: 'Banco origen no está registrado o no está activo en el sistema'
+        };
+      }
 
       // Acreditar la cuenta automáticamente
       const destSaldoAnterior = destinationAccount.saldo;
