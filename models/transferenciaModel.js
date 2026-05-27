@@ -21,7 +21,6 @@ class Transfer {
          t.swift_origen,
          t.swift_destino,
          t.monto,
-         t.moneda,
          t.estado,
          t.descripcion,
          t.motivo_rechazo,
@@ -100,10 +99,10 @@ class Transfer {
       const [result] = await connection.query(
         `INSERT INTO transferencias (
            transaction_id, cuenta_origen, cuenta_destino, swift_origen,
-           swift_destino, monto, moneda, estado, descripcion, fecha_respuesta,
+           swift_destino, monto, estado, descripcion, fecha_respuesta,
            id_cuenta_origen, id_cuenta_destino, cuenta_origen_externa,
            nombre_cuenta_origen_externa, cuenta_destino_externa, tipo_transferencia, direccion
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'APROBADA', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, ?, 'APROBADA', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)`,
         [
           transactionId,
           cuentaOrigen,
@@ -111,7 +110,6 @@ class Transfer {
           LOCAL_SWIFT,
           swiftDestino,
           monto,
-          data.moneda || originAccount.moneda || 'GTQ',
           data.descripcion || null,
           cuentaOrigenId,
           cuentaDestinoId,
@@ -372,10 +370,10 @@ class Transfer {
       const [result] = await connection.query(
         `INSERT INTO transferencias (
            transaction_id, cuenta_origen, cuenta_destino, swift_origen,
-           swift_destino, monto, moneda, estado, descripcion, fecha_respuesta,
+           swift_destino, monto, estado, descripcion, fecha_respuesta,
            id_cuenta_origen, id_cuenta_destino, cuenta_origen_externa,
            nombre_cuenta_origen_externa, cuenta_destino_externa, tipo_transferencia, direccion
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'APROBADA', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, ?, 'APROBADA', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)`,
         [
           transactionId,
           cuentaOrigen,
@@ -383,7 +381,6 @@ class Transfer {
           swiftOrigen,
           LOCAL_SWIFT,
           monto,
-          data.moneda || destinationAccount.moneda || 'GTQ',
           descripcion || `Transferencia interbancaria recibida de ${nombreOrigen}`,
           data.id_cuenta_origen || data.cuentaOrigenId || null,
           destinationAccount.id_cuenta,
@@ -809,7 +806,6 @@ class Transfer {
          t.swift_origen,
          t.swift_destino,
          t.monto,
-         t.moneda,
          t.estado,
          t.descripcion,
          t.motivo_rechazo,
