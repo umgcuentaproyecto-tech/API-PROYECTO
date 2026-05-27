@@ -475,7 +475,11 @@ class Transfer {
 
       console.log(`Enviando transferencia ${transfer.transaction_id} a ${bank.nombre}...`);
 
-      const response = await fetch(`${bank.url_api}${bank.endpoint_transferencia || '/api/transferencias/interbancaria/entrante'}`, {
+      const url_api = bank.url_api.replace(/\/$/, ''); // Remover slash final si existe
+      const endpoint = bank.endpoint_transferencia || '/api/transferencias/interbancaria/entrante';
+      const fullUrl = `${url_api}${endpoint}`;
+
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
