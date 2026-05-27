@@ -39,16 +39,38 @@ app.use('/api/cuentas', cuentasRoutes);
 app.use('/api/transacciones', transaccionesRoutes);
 app.use('/api/movimientos', movimientosRoutes);
 
-// Test endpoint
+// Test endpoint - Bienvenida
 app.get('/', (req, res) => {
   res.json({
-    message: 'Bienvenido a la API',
+    message: '¡Bienvenido al Sistema de Transferencias Bancarias!',
     version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth/login',
-      users: '/api/users',
-      transferencias: '/api/transferencias',
-      validarTransferencia: '/api/transferencias/validar'
+    status: 'Servidor activo',
+    timestamp: new Date().toISOString(),
+    publicRoutes: {
+      autenticacion: {
+        login: 'POST /api/auth/login',
+        logout: 'POST /api/auth/logout',
+        refresh: 'POST /api/auth/refresh-token'
+      },
+      transferencias: {
+        config: 'GET /api/transferencias/config',
+        catalogos: 'GET /api/transferencias/catalogos',
+        validar: 'POST /api/transferencias/validar',
+        interbancaria_entrante: 'POST /api/transferencias/interbancaria/entrante',
+        notificacion_resultado: 'POST /api/transferencias/notificacion-resultado',
+        validar_cuenta_destino: 'POST /api/transferencias/validar-cuenta-destino',
+        validar_cuenta_externa: 'POST /api/transferencias/validar-cuenta-externa'
+      },
+      bancos: {
+        listar: 'GET /api/bancos',
+        obtener: 'GET /api/bancos/:id'
+      }
+    },
+    protectedRoutes: {
+      users: 'GET /api/users (requiere autenticación)',
+      transferencias_crear: 'POST /api/transferencias (requiere autenticación)',
+      transacciones: 'GET /api/transacciones (requiere autenticación)',
+      movimientos: 'GET /api/movimientos (requiere autenticación)'
     }
   });
 });
