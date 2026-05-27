@@ -308,15 +308,17 @@ class Transfer {
   }
 
   static async validateIncoming(data) {
+    const payload = data.transfer || data;
+
     // Mapear nuevo formato estandarizado
-    const transactionId = data.TransactionID;
-    const cuentaOrigen = data.cuentaOrigen;
-    const swiftOrigen = data.swiftOrigen;
-    const cuentaDestino = data.cuentaDestino;
-    const swiftDestino = data.swiftDestino || LOCAL_SWIFT;
-    const nombreOrigen = data.NombreOrigen || 'Cliente Externo';
-    const monto = Number(data.monto);
-    const descripcion = data.descripcion;
+    const transactionId = payload.TransactionID || payload.transactionId || payload.transaction_id;
+    const cuentaOrigen = payload.cuentaOrigen || payload.cuenta_origen;
+    const swiftOrigen = payload.swiftOrigen || payload.swift_origen;
+    const cuentaDestino = payload.cuentaDestino || payload.cuenta_destino;
+    const swiftDestino = payload.swiftDestino || payload.swift_destino || LOCAL_SWIFT;
+    const nombreOrigen = payload.NombreOrigen || payload.nombreOrigen || payload.nombre_origen || 'Cliente Externo';
+    const monto = Number(payload.monto);
+    const descripcion = payload.descripcion;
 
     if (!transactionId || !cuentaDestino || !monto || monto <= 0) {
       return {
@@ -382,13 +384,13 @@ class Transfer {
           LOCAL_SWIFT,
           monto,
           descripcion || `Transferencia interbancaria recibida de ${nombreOrigen}`,
-          data.id_cuenta_origen || data.cuentaOrigenId || null,
+          payload.id_cuenta_origen || payload.cuentaOrigenId || null,
           destinationAccount.id_cuenta,
-          data.cuentaOrigenExterna || data.cuenta_origen_externa || null,
-          data.nombreCuentaOrigenExterna || data.nombre_cuenta_origen_externa || nombreOrigen || null,
-          data.cuentaDestinoExterna || data.cuenta_destino_externa || null,
-          data.tipo || data.tipo_transferencia || null,
-          data.direccion || null
+          payload.cuentaOrigenExterna || payload.cuenta_origen_externa || null,
+          payload.nombreCuentaOrigenExterna || payload.nombre_cuenta_origen_externa || nombreOrigen || null,
+          payload.cuentaDestinoExterna || payload.cuenta_destino_externa || null,
+          payload.tipo || payload.tipo_transferencia || null,
+          payload.direccion || null
         ]
       );
 
