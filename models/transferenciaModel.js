@@ -322,15 +322,34 @@ class Transfer {
 
     // Validar cada parámetro requerido
     let razonRechazo = '';
-    if (!transactionId) razonRechazo += 'TransactionID requerido. ';
-    if (!cuentaDestino) razonRechazo += 'cuentaDestino requerido. ';
-    if (!monto || monto <= 0) razonRechazo += `Monto inválido (recibido: ${payload.monto}). `;
+    const parametrosFaltantes = [];
+    
+    if (!transactionId) {
+      razonRechazo += 'TransactionID requerido. ';
+      parametrosFaltantes.push('TransactionID (o TransactionID, transactionId, transaction_id)');
+    }
+    if (!cuentaDestino) {
+      razonRechazo += 'cuentaDestino requerido. ';
+      parametrosFaltantes.push('cuentaDestino (o cuentaDestino, cuenta_destino)');
+    }
+    if (!monto || monto <= 0) {
+      razonRechazo += `Monto inválido (recibido: ${payload.monto}). `;
+      parametrosFaltantes.push(`monto positivo (recibido: ${payload.monto})`);
+    }
 
     if (razonRechazo) {
       return {
         status: 'RECHAZADO',
         reason: razonRechazo.trim(),
-        parametrosRecibidos: payload
+        parametrosRecibidos: payload,
+        parametrosFaltantes: parametrosFaltantes,
+        formatoEsperado: {
+          TransactionID: 'string (ID único de transacción)',
+          cuentaDestino: 'string (número de cuenta destino)',
+          monto: 'number (cantidad positiva)',
+          swiftOrigen: 'string (código SWIFT del banco origen)',
+          NombreOrigen: 'string (nombre del cliente)'
+        }
       };
     }
 
