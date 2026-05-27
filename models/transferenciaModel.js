@@ -488,7 +488,11 @@ class Transfer {
       });
 
       if (!response.ok) {
-        console.warn(`${bank.nombre} retornó error ${response.status} para transferencia ${transfer.transaction_id}`);
+        console.warn(`${bank.nombre} retornó error ${response.status} para transferencia ${transfer.transaction_id}`, {
+          payload,
+          statusCode: response.status,
+          statusText: response.statusText
+        });
         return;
       }
 
@@ -496,7 +500,11 @@ class Transfer {
       console.log(`Transferencia ${transfer.transaction_id} enviada exitosamente a ${bank.nombre}`);
       
     } catch (error) {
-      console.error(`Error enviando a ${bank.nombre}:`, error.message);
+      console.error(`Error enviando a ${bank.nombre}:`, {
+        message: error.message,
+        error: error.toString(),
+        payload
+      });
     }
   }
 
