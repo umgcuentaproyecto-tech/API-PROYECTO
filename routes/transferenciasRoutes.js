@@ -7,7 +7,7 @@ const { requireAuth, requireRole, optionalAuth } = require('../middleware/middle
 router.get('/config', transferController.getConfig);
 router.get('/catalogos', transferController.getCatalogs);
 router.post('/validar', transferController.validateTransfer);
-router.post('/interbancaria/entrante', transferController.createTransfer);
+router.post('/interbancaria/entrante', transferController.receiveIncomingTransfer);
 router.post('/', optionalAuth, transferController.createTransfer);
 router.post('/notificacion-resultado', transferController.receiveNotification);
 router.post('/validar-cuenta-destino', transferController.validateDestinationAccount);
