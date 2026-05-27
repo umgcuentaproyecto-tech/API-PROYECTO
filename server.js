@@ -6,6 +6,9 @@ const bodyParser = require('body-parser');
 // DB config
 const db = require('./config/database');
 
+// Swagger config
+const { swaggerUi, specs } = require('./config/swagger');
+
 // Error handler middleware
 const errorHandler = require('./middleware/manejadorErrores');
 
@@ -27,6 +30,13 @@ app.set('trust proxy', 1);
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Swagger documentation
+app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs, {
+  swaggerOptions: {
+    persistAuthorization: true
+  }
+}));
 
 // Routes
 app.use('/api/auth', autenticacionRoutes);
