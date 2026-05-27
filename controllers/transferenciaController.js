@@ -31,8 +31,7 @@ exports.createTransfer = async (req, res) => {
     
 //trasferencia externa entrante
     const esTransferenciaEntrante = transferData.swiftOrigen && 
-                                     transferData.swiftOrigen !== LOCAL_SWIFT &&
-                                     !req.user; // Sin autenticación
+                                     transferData.swiftOrigen !== LOCAL_SWIFT; // Detectar por SWIFT diferente
     
     if (esTransferenciaEntrante) {
       // Transferencia interbancaria entrante
