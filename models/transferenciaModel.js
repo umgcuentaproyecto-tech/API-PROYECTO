@@ -320,10 +320,17 @@ class Transfer {
     const monto = Number(payload.monto);
     const descripcion = payload.descripcion;
 
-    if (!transactionId || !cuentaDestino || !monto || monto <= 0) {
+    // Validar cada parámetro requerido
+    let razonRechazo = '';
+    if (!transactionId) razonRechazo += 'TransactionID requerido. ';
+    if (!cuentaDestino) razonRechazo += 'cuentaDestino requerido. ';
+    if (!monto || monto <= 0) razonRechazo += `Monto inválido (recibido: ${payload.monto}). `;
+
+    if (razonRechazo) {
       return {
         status: 'RECHAZADO',
-        reason: 'Solicitud incompleta o monto invalido'
+        reason: razonRechazo.trim(),
+        parametrosRecibidos: payload
       };
     }
 
@@ -344,7 +351,8 @@ class Transfer {
         await connection.commit();
         return {
           status: 'RECHAZADO',
-          reason: 'Cuenta destino no existe o no esta activa'
+          reason: 'Cuenta destino no existe o no esta activa',
+          detalles: `Cuenta buscada: ${cuentaDestino}, SWIFT: ${LOCAL_SWIFT}`
         };
       }
 
@@ -358,7 +366,8 @@ class Transfer {
         await connection.commit();
         return {
           status: 'RECHAZADO',
-          reason: 'Banco origen no está registrado o no está activo en el sistema'
+          reason: 'Banco origen no está registrado o no está activo en el sistema',
+          detalles: `SWIFT origen: ${swiftOrigen}`
         };
       }
 

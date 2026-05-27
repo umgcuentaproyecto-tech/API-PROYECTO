@@ -72,6 +72,7 @@ exports.createTransfer = async (req, res) => {
       } else {
         logger.transferencia('createTransfer - Incoming', 'RECHAZADO', {
           razon: result.reason,
+          transfer: transferData,
           ipOrigen,
           nombreUsuario
         });
