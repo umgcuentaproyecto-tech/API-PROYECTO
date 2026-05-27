@@ -27,21 +27,20 @@ const app = express();
 
 // Middleware
 app.set('trust proxy', 1);
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Normalize accidental repeated slashes in request paths, e.g. //api -> /api.
 app.use((req, res, next) => {
   const [path, query] = req.url.split('?');
   const normalizedPath = path.replace(/\/{2,}/g, '/');
 
   if (normalizedPath !== path) {
     req.url = normalizedPath + (query ? `?${query}` : '');
+    req.originalUrl = req.url;
   }
 
   next();
 });
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Swagger documentation
 app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs, {
