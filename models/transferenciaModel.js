@@ -382,11 +382,55 @@ class Transfer {
       );
 
       if (!bankOriginRows || bankOriginRows.length === 0) {
+        // Registrar la transferencia como RECHAZADA para auditoría
+        // No afectar saldos ni crear movimientos en módulo finanzas
+        const [insertResult] = await connection.query(
+          `INSERT INTO transferencias (
+             transaction_id, cuenta_origen, cuenta_destino, swift_origen,
+             swift_destino, monto, estado, descripcion, motivo_rechazo, fecha_respuesta,
+             id_cuenta_origen, id_cuenta_destino, cuenta_origen_externa,
+             nombre_cuenta_origen_externa, cuenta_destino_externa, tipo_transferencia, direccion
+           ) VALUES (?, ?, ?, ?, ?, ?, 'RECHAZADA', ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            transactionId,
+            cuentaOrigen,
+            cuentaDestino,
+            swiftOrigen,
+            LOCAL_SWIFT,
+            monto,
+            descripcion || `Transferencia interbancaria recibida de ${nombreOrigen}`,
+            'Banco origen no está registrado o no está activo en el sistema',
+            payload.id_cuenta_origen || payload.cuentaOrigenId || null,
+            destinationAccount.id_cuenta,
+            payload.cuentaOrigenExterna || payload.cuenta_origen_externa || null,
+            payload.nombreCuentaOrigenExterna || payload.nombre_cuenta_origen_externa || nombreOrigen || null,
+            payload.cuentaDestinoExterna || payload.cuenta_destino_externa || null,
+            payload.tipo || payload.tipo_transferencia || null,
+            payload.direccion || null
+          ]
+        );
+
+        // Registrar auditoría del rechazo
+        await this.registroAuditoria({
+          idTransferencia: insertResult.insertId,
+          evento: 'TRANSFERENCIA_INTERBANCARIA_RECIBIDA_RECHAZADA_BANCO_NO_REGISTRADO',
+          detalle: {
+            transaction_id: transactionId,
+            swift_origen: swiftOrigen,
+            cuenta_origen: cuentaOrigen,
+            cuenta_destino: cuentaDestino,
+            monto
+          },
+          ipOrigen: data.ipOrigen,
+          nombreUsuario: data.nombreUsuario
+        });
+
         await connection.commit();
         return {
           status: 'RECHAZADO',
           reason: 'Banco origen no está registrado o no está activo en el sistema',
-          detalles: `SWIFT origen: ${swiftOrigen}`
+          detalles: `SWIFT origen: ${swiftOrigen}`,
+          id_transferencia: insertResult.insertId
         };
       }
 
