@@ -21,6 +21,7 @@ const clientesRoutes = require('./routes/clientesRoutes');
 const cuentasRoutes = require('./routes/cuentasRoutes');
 const transaccionesRoutes = require('./routes/transaccionesRoutes');
 const movimientosRoutes = require('./routes/movimientosRoutes');
+const finanzasRoutes = require('./routes/finanzasRoutes');
 
 // App setup
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/clientes', clientesRoutes);
 app.use('/api/cuentas', cuentasRoutes);
 app.use('/api/transacciones', transaccionesRoutes);
 app.use('/api/movimientos', movimientosRoutes);
+app.use('/api/finanzas', finanzasRoutes);
 
 // Test endpoint - Bienvenida
 app.get('/', (req, res) => {
@@ -82,6 +84,11 @@ app.get('/', (req, res) => {
         validar_cuenta_destino: 'POST /api/transferencias/validar-cuenta-destino',
         validar_cuenta_externa: 'POST /api/transferencias/validar-cuenta-externa'
       },
+      finanzas: {
+        saldos: 'GET /api/finanzas/saldos',
+        dashboard: 'GET /api/finanzas/dashboard',
+        alertas: 'GET /api/finanzas/alertas'
+      },
       bancos: {
         listar: 'GET /api/bancos',
         obtener: 'GET /api/bancos/:id'
@@ -91,7 +98,8 @@ app.get('/', (req, res) => {
       users: 'GET /api/users (requiere autenticación)',
       transferencias_crear: 'POST /api/transferencias (requiere autenticación)',
       transacciones: 'GET /api/transacciones (requiere autenticación)',
-      movimientos: 'GET /api/movimientos (requiere autenticación)'
+      movimientos: 'GET /api/movimientos (requiere autenticación)',
+      finanzas: 'GET /api/finanzas/* (requiere autenticación)'
     }
   });
 });
