@@ -150,11 +150,12 @@ class Transfer {
         await this.registroAuditoria({
           idTransferencia: result.insertId,
           user,
-          evento: 'TRANSFERENCIA_INTERBANCARIA_PENDIENTE',
+          evento: 'TRANSFERENCIA_INTERBANCARIA_APROBADA',
           detalle: {
             transaction_id: transactionId,
             swift_destino: swiftDestino,
             cuenta_destino: data.cuenta_destino,
+            estado: 'APROBADA',
             monto
           },
           ipOrigen: data.ipOrigen,
