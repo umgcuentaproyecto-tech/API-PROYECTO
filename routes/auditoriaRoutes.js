@@ -48,7 +48,7 @@ function getJson(url, timeoutMs = 5000) {
   });
 }
 
-router.use(requireAuth, requireRole('ADMIN'));
+router.use(requireAuth, requireRole('ADMIN', 'AUDITOR'));
 
 router.get('*', async (req, res) => {
   try {
