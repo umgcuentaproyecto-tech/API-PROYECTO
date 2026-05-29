@@ -2,11 +2,12 @@ const crypto = require('crypto');
 const pool = require('../config/database');
 const Movement = require('./movimientoModel');
 const AuditService = require('../utils/auditService');
+const { fechaCompactaGuatemala, fechaHoraGuatemala } = require('../utils/fechaGuatemala');
 
 const LOCAL_SWIFT = process.env.BANK_SWIFT || 'GTBC6968';
 
 function createTransactionId(swiftOrigen) {
-  const datePart = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+  const datePart = fechaCompactaGuatemala();
   const randomPart = crypto.randomBytes(4).toString('hex').toUpperCase();
   return `${swiftOrigen}-${datePart}-${randomPart}`;
 }
@@ -779,7 +780,7 @@ class Transfer {
         transaction_id: transfer.transaction_id,
         estado: estado,
         mensaje: mensaje,
-        timestamp: new Date().toISOString()
+        timestamp: fechaHoraGuatemala()
       };
 
       console.log(`Notificando a ${originBank.nombre} sobre transferencia ${transfer.transaction_id}: ${estado}`);

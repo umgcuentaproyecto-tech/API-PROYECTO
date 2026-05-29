@@ -1,4 +1,5 @@
 const Finance = require('../models/finanzasModel');
+const { fechaHoraGuatemala } = require('../utils/fechaGuatemala');
 
 function parseRangeParameters(query) {
   const today = new Date();
@@ -11,8 +12,8 @@ function parseRangeParameters(query) {
   start.setHours(0, 0, 0, 0);
 
   return {
-    startDate: start.toISOString().slice(0, 19).replace('T', ' '),
-    endDate: end.toISOString().slice(0, 19).replace('T', ' ')
+    startDate: fechaHoraGuatemala(start),
+    endDate: fechaHoraGuatemala(end)
   };
 }
 
@@ -45,10 +46,10 @@ function parseDashboardRange(periodo) {
   previousEnd.setHours(23, 59, 59, 999);
 
   return {
-    currentStart: currentStart.toISOString().slice(0, 19).replace('T', ' '),
-    currentEnd: endDate.toISOString().slice(0, 19).replace('T', ' '),
-    previousStart: previousStart.toISOString().slice(0, 19).replace('T', ' '),
-    previousEnd: previousEnd.toISOString().slice(0, 19).replace('T', ' ')
+    currentStart: fechaHoraGuatemala(currentStart),
+    currentEnd: fechaHoraGuatemala(endDate),
+    previousStart: fechaHoraGuatemala(previousStart),
+    previousEnd: fechaHoraGuatemala(previousEnd)
   };
 }
 

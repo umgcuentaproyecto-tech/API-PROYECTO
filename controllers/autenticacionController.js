@@ -1,6 +1,7 @@
 const User = require('../models/usuarioModel');
 const bcrypt = require('bcryptjs');
 const AuditService = require('../utils/auditService');
+const { fechaHoraGuatemala } = require('../utils/fechaGuatemala');
 
 function createSessionToken(user) {
   const payload = {
@@ -8,7 +9,7 @@ function createSessionToken(user) {
     nombre: user.nombre,
     email: user.email,
     rol: user.rol,
-    issued_at: new Date().toISOString()
+    issued_at: fechaHoraGuatemala()
   };
 
   return Buffer.from(JSON.stringify(payload)).toString('base64');
