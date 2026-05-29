@@ -1134,6 +1134,7 @@ class Transfer {
       idTransferencia: data.idTransferencia || null,
       idUsuario: data.idUsuario || null,
       user: data.user || null,
+      nombreUsuario: data.nombreUsuario || null,
       evento: data.evento,
       detalle: {
         ...(data.detalle || {}),

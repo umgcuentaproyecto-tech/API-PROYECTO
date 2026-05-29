@@ -43,6 +43,31 @@ function postJson(url, payload, timeoutMs = 5000) {
   });
 }
 
+function formatFechaGuatemala(date) {
+  const parts = new Intl.DateTimeFormat('es-GT', {
+    timeZone: 'America/Guatemala',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}:${values.second}`;
+}
+
+function getNombreUsuario(data) {
+  return data.nombreUsuario ||
+    data.user?.nombre ||
+    data.user?.email ||
+    data.detalle?.nombreUsuario ||
+    data.detalle?.usuario ||
+    null;
+}
+
 /**
  * Servicio de auditoria centralizado.
  * Envia eventos al web service externo sin bloquear la respuesta principal.
@@ -55,9 +80,12 @@ class AuditService {
       return;
     }
 
+    const timestamp = new Date();
+
     const payload = {
       idTransferencia: data.idTransferencia || null,
       idUsuario: data.user?.id_usuario || data.idUsuario || null,
+      nombreUsuario: getNombreUsuario(data),
       evento: data.evento,
       detalle: data.detalle || {},
       ipOrigen: data.ipOrigen || null,
@@ -65,7 +93,9 @@ class AuditService {
       tabla: data.tabla || null,
       registroId: data.registroId || null,
       operacion: data.operacion || null,
-      timestamp: new Date()
+      timestamp,
+      fechaGuatemala: formatFechaGuatemala(timestamp),
+      zonaHoraria: 'America/Guatemala'
     };
 
     postJson(WS_AUDITORIA_URL, payload)
