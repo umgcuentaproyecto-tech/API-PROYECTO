@@ -64,7 +64,7 @@ exports.createBank = async (req, res) => {
     await AuditService.crear('bancos', bank.id_banco, {
       nombre: bank.nombre,
       codigo_swift: bank.codigo_swift
-    }, req.user);
+    }, req.user, req);
 
     res.status(201).json({
       success: true,
@@ -97,7 +97,7 @@ exports.updateBank = async (req, res) => {
       nombre: bank.nombre,
       codigo_swift: bank.codigo_swift,
       activo: bank.activo
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,
@@ -123,7 +123,7 @@ exports.deleteBank = async (req, res) => {
     await AuditService.eliminar('bancos', bankId, {
       nombre: bank.nombre,
       codigo_swift: bank.codigo_swift
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,
@@ -163,7 +163,7 @@ exports.updateEndpoint = async (req, res) => {
     // Auditoría
     await AuditService.actualizar('bancos', bank.id_banco, {
       endpoint_transferencia: updatedBank.endpoint_transferencia
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,

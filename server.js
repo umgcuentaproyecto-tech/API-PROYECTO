@@ -22,6 +22,7 @@ const cuentasRoutes = require('./routes/cuentasRoutes');
 const transaccionesRoutes = require('./routes/transaccionesRoutes');
 const movimientosRoutes = require('./routes/movimientosRoutes');
 const finanzasRoutes = require('./routes/finanzasRoutes');
+const auditoriaRoutes = require('./routes/auditoriaRoutes');
 
 // App setup
 const app = express();
@@ -61,6 +62,7 @@ app.use('/api/cuentas', cuentasRoutes);
 app.use('/api/transacciones', transaccionesRoutes);
 app.use('/api/movimientos', movimientosRoutes);
 app.use('/api/finanzas', finanzasRoutes);
+app.use('/api/auditoria', auditoriaRoutes);
 
 // Test endpoint - Bienvenida
 app.get('/', (req, res) => {

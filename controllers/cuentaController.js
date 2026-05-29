@@ -78,7 +78,7 @@ exports.createAccount = async (req, res) => {
       tipo_cuenta: account.tipo_cuenta,
       moneda: account.moneda,
       swift_banco: account.swift_banco
-    }, req.user);
+    }, req.user, req);
 
     res.status(201).json({
       success: true,
@@ -116,7 +116,7 @@ exports.updateAccount = async (req, res) => {
       numero_cuenta: updatedAccount.numero_cuenta,
       estado: updatedAccount.estado,
       tipo_cuenta: updatedAccount.tipo_cuenta
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,
@@ -236,7 +236,7 @@ exports.deleteAccount = async (req, res) => {
       cliente: account.nombre_cliente,
       saldo: account.saldo,
       estado: account.estado
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,

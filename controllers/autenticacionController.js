@@ -1,5 +1,6 @@
 const User = require('../models/usuarioModel');
 const bcrypt = require('bcryptjs');
+const AuditService = require('../utils/auditService');
 
 function createSessionToken(user) {
   const payload = {
@@ -27,6 +28,11 @@ exports.login = async (req, res) => {
     const user = await User.findByEmail(usuario);
 
     if (!user || !user.activo) {
+      await AuditService.login(user, false, {
+        usuario,
+        motivo: user ? 'USUARIO_INACTIVO' : 'USUARIO_NO_EXISTE'
+      }, req);
+
       return res.status(401).json({
         success: false,
         message: 'Credenciales invalidas'
@@ -37,6 +43,11 @@ exports.login = async (req, res) => {
     const passwordMatch = await bcrypt.compare(contrasena, user.password_hash);
     
     if (!passwordMatch) {
+      await AuditService.login(user, false, {
+        usuario,
+        motivo: 'PASSWORD_INVALIDO'
+      }, req);
+
       return res.status(401).json({
         success: false,
         message: 'Credenciales invalidas'
@@ -50,6 +61,11 @@ exports.login = async (req, res) => {
       rol: user.rol,
       activo: user.activo
     };
+
+    await AuditService.login(sessionUser, true, {
+      usuario,
+      rol: sessionUser.rol
+    }, req);
 
     res.json({
       success: true,

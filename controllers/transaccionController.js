@@ -93,7 +93,7 @@ const createTransaction = async (req, res) => {
             cliente: accountInfo.nombre_cliente,
             saldo_anterior: accountInfo.saldo,
             saldo_nuevo: newBalance
-        }, req.user);
+        }, req.user, req);
 
         return res.status(201).json({ 
             success: true, 

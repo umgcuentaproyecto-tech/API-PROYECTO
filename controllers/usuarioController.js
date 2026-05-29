@@ -60,7 +60,7 @@ exports.createUser = async (req, res) => {
       nombre: user.nombre,
       email: user.email,
       rol: user.rol
-    }, req.user);
+    }, req.user, req);
 
     res.status(201).json({
       success: true,
@@ -92,7 +92,7 @@ exports.updateUser = async (req, res) => {
       nombre: user.nombre,
       email: user.email,
       rol: user.rol
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,
@@ -123,7 +123,7 @@ exports.deleteUser = async (req, res) => {
     await AuditService.eliminar('usuarios', req.params.id, {
       nombre: user.nombre,
       email: user.email
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,

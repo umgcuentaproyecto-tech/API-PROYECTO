@@ -79,7 +79,7 @@ exports.createClient = async (req, res) => {
       nombres: client.nombres,
       apellidos: client.apellidos,
       dpi: client.dpi
-    }, req.user);
+    }, req.user, req);
 
     res.status(201).json({
       success: true,
@@ -134,7 +134,7 @@ exports.updateClient = async (req, res) => {
       nombres: updatedClient.nombres,
       email: updatedClient.email,
       estado: updatedClient.estado
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,
@@ -197,7 +197,7 @@ exports.deleteClient = async (req, res) => {
       nombres: client.nombres,
       apellidos: client.apellidos,
       dpi: client.dpi
-    }, req.user);
+    }, req.user, req);
 
     res.json({
       success: true,

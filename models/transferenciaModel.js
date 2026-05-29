@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const pool = require('../config/database');
 const Movement = require('./movimientoModel');
+const AuditService = require('../utils/auditService');
 
 const LOCAL_SWIFT = process.env.BANK_SWIFT || 'GTBC6968';
 
@@ -1128,25 +1129,22 @@ class Transfer {
       };
     }
   }
-
-  
   static async registroAuditoria(data) {
-    const WS_AUDITORIA_URL = process.env.WS_AUDITORIA_URL || 'http://localhost:3001/api/auditoria';
-    
-
-    fetch(WS_AUDITORIA_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        idTransferencia: data.idTransferencia || null,
-        idUsuario: data.user?.id_usuario || null,
-        evento: data.evento,
-        detalle: data.detalle || {},
-        ipOrigen: data.ipOrigen || null,
-        userAgent: data.userAgent || null,
-        timestamp: new Date()
-      })
-    }).catch(err => console.error('Error registrando auditoría:', err));
+    await AuditService.registrar({
+      idTransferencia: data.idTransferencia || null,
+      idUsuario: data.idUsuario || null,
+      user: data.user || null,
+      evento: data.evento,
+      detalle: {
+        ...(data.detalle || {}),
+        ...(data.nombreUsuario ? { nombreUsuario: data.nombreUsuario } : {})
+      },
+      ipOrigen: data.ipOrigen || null,
+      userAgent: data.userAgent || null,
+      tabla: 'transferencias',
+      registroId: data.idTransferencia || data.detalle?.transaction_id || null,
+      operacion: null
+    });
   }
 }
 
