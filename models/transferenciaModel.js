@@ -39,6 +39,32 @@ function resolveExternalTransferEndpoint(bank) {
   return bank.endpoint_transferencia || '/api/transferencias/interbancaria/entrante';
 }
 
+function normalizeExternalStatus(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
+}
+
+function getExternalResponseStatus(payload) {
+  if (typeof payload === 'string') {
+    return normalizeExternalStatus(payload);
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return '';
+  }
+
+  return normalizeExternalStatus(
+    payload.estado
+    || payload.status
+    || payload.resultado
+    || payload.data?.estado
+    || payload.data?.status
+  );
+}
+
 class Transfer {
   static async findAll() {
     const [rows] = await pool.query(
@@ -125,13 +151,15 @@ class Transfer {
         throw new Error('El banco destino no esta registrado o no esta activo');
       }
 
+      const initialStatus = swiftDestino === LOCAL_SWIFT ? 'APROBADA' : 'PENDIENTE';
+
       const [result] = await connection.query(
         `INSERT INTO transferencias (
            transaction_id, cuenta_origen, cuenta_destino, swift_origen,
            swift_destino, monto, estado, descripcion, fecha_respuesta,
            id_cuenta_origen, id_cuenta_destino, cuenta_origen_externa,
            nombre_cuenta_origen_externa, cuenta_destino_externa, tipo_transferencia, direccion
-         ) VALUES (?, ?, ?, ?, ?, ?, 'APROBADA', ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'APROBADA' THEN CURRENT_TIMESTAMP ELSE NULL END, ?, ?, ?, ?, ?, ?, ?)`,
         [
           transactionId,
           cuentaOrigen,
@@ -139,7 +167,9 @@ class Transfer {
           LOCAL_SWIFT,
           swiftDestino,
           monto,
+          initialStatus,
           data.descripcion || null,
+          initialStatus,
           cuentaOrigenId,
           cuentaDestinoId,
           cuentaOrigenExterna,
@@ -169,43 +199,72 @@ class Transfer {
         const originSaldoAnterior = originAccountBefore[0][0].saldo;
         const originAccountId = originAccountBefore[0][0].id_cuenta;
 
-        await connection.query(
-          'UPDATE cuentas SET saldo = saldo - ? WHERE numero_cuenta = ?',
-          [monto, data.cuenta_origen]
-        );
+        const externalResult = await this.sendToExternalBank({
+          transaction_id: transactionId,
+          cuenta_origen: cuentaOrigen,
+          swift_origen: LOCAL_SWIFT,
+          cuenta_destino: cuentaDestino,
+          swift_destino: swiftDestino,
+          monto,
+          descripcion: data.descripcion || null
+        }, destinationBank);
+
+        if (externalResult.estado === 'APROBADA') {
+          await connection.query(
+            'UPDATE cuentas SET saldo = saldo - ? WHERE numero_cuenta = ?',
+            [monto, data.cuenta_origen]
+          );
+
+          await connection.query(
+            `UPDATE transferencias
+             SET estado = 'APROBADA', motivo_rechazo = NULL, fecha_respuesta = CURRENT_TIMESTAMP
+             WHERE id_transferencia = ?`,
+            [result.insertId]
+          );
+        } else {
+          await connection.query(
+            `UPDATE transferencias
+             SET estado = 'RECHAZADA', motivo_rechazo = ?, fecha_respuesta = CURRENT_TIMESTAMP
+             WHERE id_transferencia = ?`,
+            [externalResult.motivo || 'Transferencia rechazada por el banco destino', result.insertId]
+          );
+        }
 
         await this.registroAuditoria({
           idTransferencia: result.insertId,
           user,
-          evento: 'TRANSFERENCIA_INTERBANCARIA_APROBADA',
+          evento: `TRANSFERENCIA_INTERBANCARIA_${externalResult.estado}`,
           detalle: {
             transaction_id: transactionId,
             swift_destino: swiftDestino,
             cuenta_destino: data.cuenta_destino,
-            estado: 'APROBADA',
-            monto
+            estado: externalResult.estado,
+            monto,
+            respuesta_banco_destino: externalResult.responsePayload || null,
+            motivo: externalResult.motivo || null
           },
           ipOrigen: data.ipOrigen,
           nombreUsuario: data.nombreUsuario
         });
 
-        // Registrar movimiento para transferencia externa pendiente
-        try {
-          await Movement.create({
-            id_cuenta: originAccountId,
-            numero_cuenta: data.cuenta_origen,
-            tipo_movimiento: 'TRANSFERENCIA_ENVIADA',
-            monto: monto,
-            saldo_anterior: parseFloat(originSaldoAnterior),
-            saldo_posterior: parseFloat(originSaldoAnterior) - monto,
-            referencia: transactionId,
-            descripcion: `Transferencia a ${data.cuenta_destino} (Banco: ${swiftDestino})`,
-            cuenta_origen: data.cuenta_origen,
-            cuenta_destino: data.cuenta_destino,
-            estado: 'PENDIENTE'
-          }, connection);
-        } catch (error) {
-          console.error('Error al registrar movimiento:', error);
+        if (externalResult.estado === 'APROBADA') {
+          try {
+            await Movement.create({
+              id_cuenta: originAccountId,
+              numero_cuenta: data.cuenta_origen,
+              tipo_movimiento: 'TRANSFERENCIA_ENVIADA',
+              monto: monto,
+              saldo_anterior: parseFloat(originSaldoAnterior),
+              saldo_posterior: parseFloat(originSaldoAnterior) - monto,
+              referencia: transactionId,
+              descripcion: `Transferencia a ${data.cuenta_destino} (Banco: ${swiftDestino})`,
+              cuenta_origen: data.cuenta_origen,
+              cuenta_destino: data.cuenta_destino,
+              estado: 'COMPLETADO'
+            }, connection);
+          } catch (error) {
+            console.error('Error al registrar movimiento:', error);
+          }
         }
       }
 
@@ -213,12 +272,6 @@ class Transfer {
 
       const transfer = await this.findById(result.insertId);
 
-      if (swiftDestino !== LOCAL_SWIFT) {
-        // Enviar a la otra API de forma asincrónica (sin bloquear)
-        this.sendToExternalBank(transfer, destinationBank).catch(error => {
-          console.error(`Error enviando transferencia ${transfer.transaction_id}:`, error.message);
-        });
-      }
 
       return transfer;
     } catch (error) {
@@ -555,8 +608,13 @@ class Transfer {
     // Enviar la transferencia a la API del banco destino sin bloquear
     if (!global.fetch) {
       console.log(`No se pudo enviar transferencia ${transfer.transaction_id}: fetch no disponible`);
-      return;
+      return {
+        estado: 'RECHAZADA',
+        motivo: 'Fetch no disponible para contactar al banco destino'
+      };
     }
+
+    let payload = null;
 
     try {
       // Obtener información del cliente origen
@@ -566,7 +624,7 @@ class Transfer {
       
       const nombreCliente = clientRows[0]?.nombreCliente || 'Cliente';
 
-      const payload = {
+      payload = {
         TransactionID: transfer.transaction_id,
         cuentaOrigen: transfer.cuenta_origen,
         swiftOrigen: transfer.swift_origen,
@@ -589,17 +647,43 @@ class Transfer {
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) {
+      const responseText = await response.text();
+      let responsePayload = responseText;
+      try {
+        responsePayload = responseText ? JSON.parse(responseText) : null;
+      } catch (parseError) {
+        responsePayload = responseText;
+      }
+
+      const externalStatus = getExternalResponseStatus(responsePayload);
+      const isRejected = externalStatus === 'RECHAZADO'
+        || externalStatus === 'RECHAZADA'
+        || responsePayload?.success === false;
+
+      if (!response.ok || isRejected) {
         console.warn(`${bank.nombre} retornó error ${response.status} para transferencia ${transfer.transaction_id}`, {
           payload,
           statusCode: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
+          responsePayload
         });
-        return;
+        return {
+          estado: 'RECHAZADA',
+          motivo: responsePayload?.message
+            || responsePayload?.error
+            || responsePayload?.reason
+            || (typeof responsePayload === 'string' ? responsePayload : null)
+            || response.statusText
+            || 'El banco destino respondio RECHAZADO',
+          responsePayload
+        };
       }
 
-      const result = await response.json();
       console.log(`Transferencia ${transfer.transaction_id} enviada exitosamente a ${bank.nombre}`);
+      return {
+        estado: 'APROBADA',
+        responsePayload
+      };
       
     } catch (error) {
       console.error(`Error enviando a ${bank.nombre}:`, {
@@ -607,6 +691,10 @@ class Transfer {
         error: error.toString(),
         payload
       });
+      return {
+        estado: 'RECHAZADA',
+        motivo: `No se pudo conectar con el banco destino: ${error.message}`
+      };
     }
   }
 
