@@ -5,11 +5,38 @@ const AuditService = require('../utils/auditService');
 const { fechaCompactaGuatemala, fechaHoraGuatemala } = require('../utils/fechaGuatemala');
 
 const LOCAL_SWIFT = process.env.BANK_SWIFT || 'GTBC6968';
+const BANCO_INDUSTRIAL_SWIFT = process.env.BANCO_INDUSTRIAL_SWIFT || 'BIGT2026';
+const BANCO_INDUSTRIAL_LOGIN = {
+  username: process.env.BANCO_INDUSTRIAL_USERNAME || 'admin',
+  password: process.env.BANCO_INDUSTRIAL_PASSWORD || 'admin123',
+  accessType: process.env.BANCO_INDUSTRIAL_ACCESS_TYPE || 'cliente'
+};
 
 function createTransactionId(swiftOrigen) {
   const datePart = fechaCompactaGuatemala();
   const randomPart = crypto.randomBytes(4).toString('hex').toUpperCase();
   return `${swiftOrigen}-${datePart}-${randomPart}`;
+}
+
+function normalizeBankName(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function isBancoIndustrial(bank) {
+  const bankName = normalizeBankName(bank?.nombre || '');
+  return bank?.codigo_swift === BANCO_INDUSTRIAL_SWIFT || bankName.includes('banco industrial');
+}
+
+function resolveExternalTransferEndpoint(bank) {
+  if (isBancoIndustrial(bank)) {
+    return '/api/interbancaria/entrante';
+  }
+
+  return bank.endpoint_transferencia || '/api/transferencias/interbancaria/entrante';
 }
 
 class Transfer {
@@ -553,7 +580,7 @@ class Transfer {
       console.log(`Enviando transferencia ${transfer.transaction_id} a ${bank.nombre}...`);
 
       const url_api = bank.url_api.replace(/\/$/, ''); // Remover slash final si existe
-      const endpoint = bank.endpoint_transferencia || '/api/transferencias/interbancaria/entrante';
+      const endpoint = resolveExternalTransferEndpoint(bank);
       const fullUrl = `${url_api}${endpoint}`;
 
       const response = await fetch(fullUrl, {
@@ -1085,6 +1112,10 @@ class Transfer {
         };
       }
 
+      if (isBancoIndustrial(bank)) {
+        return await this.validateBancoIndustrialAccount(numeroCuenta, bank);
+      }
+
       const response = await fetch(`${bank.url_api}/api/cuentas`, {
         method: 'GET',
         headers: { 'accept': 'application/json' }
@@ -1131,6 +1162,83 @@ class Transfer {
       };
     }
   }
+
+  static async validateBancoIndustrialAccount(numeroCuenta, bank) {
+    const baseUrl = bank.url_api.replace(/\/$/, '');
+
+    const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(BANCO_INDUSTRIAL_LOGIN)
+    });
+
+    if (!loginResponse.ok) {
+      return {
+        existe: false,
+        error: `No se pudo autenticar con ${bank.nombre}`
+      };
+    }
+
+    const loginPayload = await loginResponse.json();
+    const token = loginPayload.token
+      || loginPayload.accessToken
+      || loginPayload.access_token
+      || loginPayload.data?.token
+      || loginPayload.data?.accessToken;
+
+    if (!token) {
+      return {
+        existe: false,
+        error: `${bank.nombre} no devolvio token de autenticacion`
+      };
+    }
+
+    const accountsResponse = await fetch(`${baseUrl}/api/operaciones/mis-cuentas`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!accountsResponse.ok) {
+      return {
+        existe: false,
+        error: `No se pudieron obtener las cuentas de ${bank.nombre}`
+      };
+    }
+
+    const accountsPayload = await accountsResponse.json();
+    const cuentas = Array.isArray(accountsPayload)
+      ? accountsPayload
+      : accountsPayload.cuentas || accountsPayload.data || [];
+
+    const cuenta = cuentas.find((item) => {
+      const accountNumber = item.numero_cuenta || item.numeroCuenta || item.cuenta || item.accountNumber;
+      return accountNumber === numeroCuenta;
+    });
+
+    if (!cuenta) {
+      return {
+        existe: false,
+        error: 'Cuenta no encontrada en Banco Industrial'
+      };
+    }
+
+    return {
+      existe: true,
+      numeroCuenta: cuenta.numero_cuenta || cuenta.numeroCuenta || numeroCuenta,
+      nombreCliente: cuenta.nombre_cliente || cuenta.nombreCliente || cuenta.nombre || 'Cliente Banco Industrial',
+      banco: cuenta.nombre_banco || bank.nombre,
+      tipoCuenta: cuenta.nombre_tipo || cuenta.tipoCuenta || cuenta.tipo_cuenta || 'DESCONOCIDO',
+      estado: cuenta.estado || 'ACTIVA',
+      _rawData: cuenta
+    };
+  }
+
   static async registroAuditoria(data) {
     await AuditService.registrar({
       idTransferencia: data.idTransferencia || null,

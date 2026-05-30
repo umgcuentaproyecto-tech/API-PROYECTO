@@ -235,6 +235,7 @@ exports.validateAccountAtBank = async (req, res) => {
 
     res.json({
       success: result.existe,
+      message: result.existe ? 'Cuenta validada' : result.error,
       data: result
     });
   } catch (error) {
